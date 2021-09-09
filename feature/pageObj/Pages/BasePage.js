@@ -8,6 +8,10 @@ class BasePage {
       await browser.$(selector).setValue(value);
     }
 
+    async getTextFromElement(selector) {
+         await browser.$(selector).getText();
+    }
+
 }
 
 module.exports = new BasePage();

@@ -1,4 +1,4 @@
-class SignInLocators {
+class LeftPanel {
     constructor() {
         this.Main_Input_Aim = "//i[@title ='Room members']"
         this.General_Room = "span[class = 'room-name ']"
@@ -10,4 +10,4 @@ class SignInLocators {
 }
 
 
-module.exports = new SignInLocators();
+module.exports = new LeftPanel();
