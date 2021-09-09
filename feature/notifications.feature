@@ -4,3 +4,4 @@ Feature: Test
     Given User open Aim
     Then Verify that Aim chat is open
     When User enter smth in the Main input field
+    test
