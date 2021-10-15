@@ -8,8 +8,8 @@ class BasePage {
       await browser.$(selector).setValue(value);
     }
 
-    async getTextFromElement(selector) {
-         await browser.$(selector).getText();
+    async getTextFromElement(selector, attribute) {
+         await browser.$(selector).getAttribute(attribute);
     }
 
 }
