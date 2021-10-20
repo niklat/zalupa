@@ -4,11 +4,6 @@ let leftPanel = require('../pageObj/Selectors/leftPanel')
 const https = require("https");
 const querystring = require("querystring");
 let rightPanel = require('../pageObj/Selectors/rightPanel')
-let assert = require('assert')
-let {randomString} = require('../helper/commonFunctions/helperFunctions')
-
-
-
 
 
 Given(/^Set Default Settings.$/, async function () {
@@ -18,7 +13,8 @@ Given(/^Set Default Settings.$/, async function () {
 
 Given(/^User open Aim.$/,async function () {
     await browser.url('https://chat-qa.aimprosoft.com');
-    async function login(){
+
+    async function login() {
         const data = querystring.stringify({
             username: '213cdv',
             password: 'Test1234',
@@ -44,27 +40,23 @@ Given(/^User open Aim.$/,async function () {
         return new Promise(function (resolve, reject) {
             try {
                 const req = https.request(options, res => {
-
+                    console.log(res.statusCode)
                     if (res.statusCode < 200 && res.statusCode > 302) {
                         reject('Bad request ${res.statusCode}');
                     }
 
-                    const data = [];
+                    let dat = [];
                     let buffer = '';
-                    res.on('data', d => {
-                        data.push(d);
+                    res.on('data', (d) => {
+                        dat.push(d);
                     }).on('end', () => {
-                        buffer = Buffer.concat(data);
+                        buffer = Buffer.concat(dat);
+                        resolve({
+                            data: buffer.toString(),
+                            headers: res.headers
+                        })
                     });
-
-                    const response = {
-                        data: buffer.toString(),
-                        headers: res.headers
-                    }
-
-                    resolve(response);
-                });
-
+                })
                 req.on('error', error => {
                     reject('Bad request ${error}');
                 });
@@ -74,20 +66,136 @@ Given(/^User open Aim.$/,async function () {
             } catch (e) {
                 reject(e);
             }
+
         });
     }
-    const resp = await login();
-    const loginCookies = resp.headers['set-cookie'];
-    for (let cookie of loginCookies) {
-        const cookieNameValue = cookie.split(';')[0].split('=');
-        const driverCookie = {
-            name: cookieNameValue[0],
-            value: cookieNameValue[1]
-        }
-        await browser.setCookies(driverCookie)
+
+
+    function doGetCall(options) {
+        return new Promise(function (resolve, reject) {
+            try {
+                const req = https.request(options, res => {
+                    console.log(res.statusCode)
+                    if (res.statusCode < 200 && res.statusCode > 302) {
+                        reject('Bad request ${res.statusCode}');
+                    }
+
+                    let buffer = '';
+                    const response = {
+                        data: buffer.toString(),
+                        headers: res.headers.location
+                    }
+
+                    resolve(response);
+
+                });
+
+                req.on('error', error => {
+                    reject('Bad request ${error}');
+                });
+
+
+                req.end();
+            } catch (e) {
+                reject(e);
+            }
+        });
     }
 
-    await browser.url('https://chat-qa.aimprosoft.com/#/chat/4')
+
+
+    const resp = await login();
+    let cookies = '';
+
+    const cookieHeaders = resp.headers['set-cookie'];
+
+    for (let i = cookieHeaders.length - 1; i >= 0; i--) {
+        const cookieNameValue = cookieHeaders[i].split(';')[0];
+        let sep = cookies.length > 0 ? '; ' : '';
+        cookies += sep + cookieNameValue;
+    }
+    //
+    for (let cookie of cookieHeaders) {
+        const cookieNameValue = cookie.split(';')[0];
+        let sep = cookies.length > 0 ? '; ' : '';
+        cookies += sep + cookieNameValue;
+    }
+        await browser.url('https://chat-qa.aimprosoft.com/#/chat/4')
+
+
+        async function second() {
+            let options2 = {
+                hostname: 'chat-qa.aimprosoft.com',
+                port: 443,
+                path: '/oauth/authorize?client_id=aimprosoft_chat&redirect_uri=https://chat-qa.aimprosoft.com/index.html&response_type=code&scope=read',
+                method: 'GET',
+                headers: {
+                    'Cookie':  cookies
+                }
+            };
+            return await doGetCall(options2)
+        }
+
+        let location = await second()
+        let url = location.headers
+
+
+    const codeOnly = url.replace(/.*?code=/, "")
+    console.log(codeOnly)
+    console.log(typeof codeOnly)
+
+    async function third () {
+        const data2 = querystring.stringify({
+            client_id: 'aimprosoft_chat',
+            client_secret: 'EHuUTa',
+            code: codeOnly,
+            redirect_uri: 'https://chat-qa.aimprosoft.com/index.html'
+        });
+        const options3 = {
+            hostname: 'chat-qa.aimprosoft.com',
+            port: 443,
+            path: '/oauth/token?grant_type=authorization_code',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': cookies
+            }
+        }
+        return doPostCall(options3,data2)
+    }
+    const getAccessToken = await third()
+    let body = getAccessToken.data
+
+    let mute = async function () {
+    let data4 = '1200000'
+
+    const options3 = {
+        hostname: 'chat-qa.aimprosoft.com',
+        port: 443,
+        path: '/api/users/notificationSettings/muteAll',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Cookie': cookies,
+            'Authorization': body
+        }
+    }
+    return doPostCall(options3, data4)
+}
+
+    const muteAll = await mute()
+
+
+
+
+
+
+
+
+    await browser.pause(3000)
+
+
+
 })
 When(/^Click on the Room Members on the Right panel.$/,  async function () {
     await basePage.clickOnElement(leftPanel.Main_Input_Aim )
@@ -122,7 +230,6 @@ When(/^Click on Emoji icon and select first smile in the Smileys and People cate
 When(/^Click on the Reply button.$/,async  function () {
     await basePage.clickOnElement(rightPanel.Reply_Button)
 });
-
 Then(/^Verify that user reply on the last message.$/, async function () {
     await browser.waitUntil(   async () => (await browser.$(rightPanel.Last_Message_Container).isDisplayed()))
 });
@@ -161,63 +268,12 @@ When(/^Enter in the Search for room or team members field\.$/, async function ()
     await basePage.fillAnyField(rightPanel.Search_Room_Specific_Screen, '&*^%$#@!')
     await browser.pause(3000)
 });
-When(/^user click on a mute all chats button$/, async function () {
-    async function login(){
-        const data = '1200000'
-        data.toString()
-        const options = {
-            hostname: 'chat-qa.aimprosoft.com',
-            port: 443,
-            path: '/api/users/notificationSettings/muteAll',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': 7
-            }
-        };
 
 
-        return doPostCall(options, data);
-    }
-
-    function doPostCall(options, data) {
-        return new Promise(function (resolve, reject) {
-            try {
-                const req = https.request(options, res => {
-
-                    if (res.statusCode < 200 && res.statusCode > 302) {
-                        reject('Bad request ${res.statusCode}');
-                    }
-
-                    const data = [];
-                    let buffer = '';
-                    res.on('data', d => {
-                        data.push(d);
-                    }).on('end', () => {
-                        buffer = Buffer.concat(data);
-                    });
-
-                    const response = {
-                        data: buffer.toString(),
-                        headers: res.headers
-                    }
-
-                    resolve(response);
-                });
-
-                req.on('error', error => {
-                    reject('Bad request ${error}');
-                });
-                req.write(data);
-
-                req.end();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-    const resp = await login();
-
-  await browser.refresh()
+When(/^Pause and Refresh$/, async function () {
+    await browser.refresh()
+    await browser.pause(10000)
+});
+When(/^get access_token$/,async function () {
 
 });

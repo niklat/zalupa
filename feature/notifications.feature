@@ -38,6 +38,7 @@ Feature: Testing Aim Chat Random functionality
 #    And Click on the Notification Settings option.
 #    And Click on the Add room or user button.
 #    And Enter in the Search for room or team members field.
-
+@debug
     Scenario: api
-      When user click on a mute all chats button
+      And get access_token
+
