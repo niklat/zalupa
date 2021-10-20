@@ -103,7 +103,6 @@ Given(/^User open Aim.$/,async function () {
     }
 
 
-
     const resp = await login();
     let cookies = '';
 
@@ -119,7 +118,9 @@ Given(/^User open Aim.$/,async function () {
         const cookieNameValue = cookie.split(';')[0];
         let sep = cookies.length > 0 ? '; ' : '';
         cookies += sep + cookieNameValue;
+
     }
+
         await browser.url('https://chat-qa.aimprosoft.com/#/chat/4')
 
 
@@ -142,7 +143,6 @@ Given(/^User open Aim.$/,async function () {
 
     const codeOnly = url.replace(/.*?code=/, "")
     console.log(codeOnly)
-    console.log(typeof codeOnly)
 
     async function third () {
         const data2 = querystring.stringify({
@@ -165,10 +165,13 @@ Given(/^User open Aim.$/,async function () {
     }
     const getAccessToken = await third()
     let body = getAccessToken.data
+    let zalupa = JSON.parse(body)
+    let alupa = `${zalupa.token_type} ${zalupa.access_token}`
+    console.log(typeof alupa)
+    console.log(alupa)
 
     let mute = async function () {
-    let data4 = '1200000'
-
+    let data4 = {  text: '1200000' }
     const options3 = {
         hostname: 'chat-qa.aimprosoft.com',
         port: 443,
@@ -177,17 +180,15 @@ Given(/^User open Aim.$/,async function () {
         headers: {
             'Content-Type': 'application/json',
             'Cookie': cookies,
-            'Authorization': body
+            'Authorization': body,
+            'Content-Length': data4.text.length
         }
     }
-    return doPostCall(options3, data4)
+    return doPostCall(options3, data4.text)
 }
 
     const muteAll = await mute()
-
-
-
-
+    console.log(muteAll)
 
 
 
@@ -275,5 +276,17 @@ When(/^Pause and Refresh$/, async function () {
     await browser.pause(10000)
 });
 When(/^get access_token$/,async function () {
+
+});
+Given(/^second$/, function () {
+
+});
+Given(/^first$/, function () {
+
+});
+Given(/^third$/, function () {
+
+});
+Given(/^fourth$/, function () {
 
 });

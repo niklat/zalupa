@@ -40,5 +40,4 @@ Feature: Testing Aim Chat Random functionality
 #    And Enter in the Search for room or team members field.
 @debug
     Scenario: api
-      And get access_token
-
+      And first
